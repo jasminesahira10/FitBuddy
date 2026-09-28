@@ -1,14 +1,13 @@
 import os
 from flask import Flask, render_template, request, jsonify
-import google.generativeai as genai
+from google import genai
 from dotenv import load_dotenv
 
 load_dotenv()
 app = Flask(__name__)
 
-# Configure Gemini
-genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-model = genai.GenerativeModel('gemini-1.5-flash')
+api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
+client = genai.Client(api_key=api_key)
 
 @app.route('/')
 def home():
@@ -23,23 +22,9 @@ def generate():
     height = data.get('height')
     goal = data.get('goal')
     activity = data.get('activity')
-
-    prompt = f"""
-    You are FitBuddy, an expert AI fitness coach.
-    Create a personalized 7-day fitness plan for:
-    Age: {age}, Gender: {gender}, Weight: {weight}kg, Height: {height}cm
-    Goal: {goal}, Activity Level: {activity}
-    
-    Give output in clean sections:
-    1. Summary & Daily Calorie Target
-    2. 7-Day Workout Plan (with sets/reps)
-    3. 7-Day Veg/Non-Veg Diet Plan (breakfast, lunch, dinner)
-    4. Important Tips
-    Make it beginner-friendly.
-    """
-
+    prompt = f"You are FitBuddy... Age: {age}, Gender: {gender}, Weight: {weight}kg, Height: {height}cm Goal: {goal}, Activity: {activity} - 7 day plan kudu"
     try:
-        response = model.generate_content(prompt)
+        response = client.models.generate_content(model='gemini-2.0-flash', contents=prompt)
         return jsonify({"plan": response.text})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
